@@ -128,6 +128,7 @@ namespace igl
 
       if (s.dim == 2)
       {
+        #pragma omp parallel for schedule(static)
         for (int i = 0; i < s.Ji.rows(); ++i)
         {
           typedef Eigen::Matrix<double, 2, 2> Mat2;
@@ -245,6 +246,7 @@ namespace igl
         Vec3 m_sing_new;
         Vec3 closest_sing_vec;
         const double sqrt_2 = sqrt(2);
+        #pragma omp parallel for private(ji, m_sing_new, closest_sing_vec) schedule(static)
         for (int i = 0; i < s.Ji.rows(); ++i)
         {
           ji(0, 0) = s.Ji(i, 0);
@@ -601,6 +603,7 @@ namespace igl
       if (s.dim == 2)
       {
         Eigen::Matrix<double, 2, 2> ji;
+        #pragma omp parallel for schedule(static) private(ji) reduction (+:energy)
         for (int i = 0; i < s.f_n; i++)
         {
           ji(0, 0) = Ji(i, 0);
@@ -656,6 +659,7 @@ namespace igl
       else
       {
         Eigen::Matrix<double, 3, 3> ji;
+        #pragma omp parallel for schedule(static) private(ji) reduction(+:energy)
         for (int i = 0; i < s.f_n; i++)
         {
           ji(0, 0) = Ji(i, 0);
