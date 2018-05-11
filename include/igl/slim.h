@@ -46,6 +46,10 @@ struct SLIMData
   Eigen::MatrixXd bc;
   double soft_const_p;
 
+  // Optional additional linear constaint matrix and RHS, that will be concatenated with L
+  Eigen::SparseMatrix<double> C;
+  Eigen::VectorXd C_rhs;
+
   double exp_factor; // used for exponential energies, ignored otherwise
   bool mesh_improvement_3d; // only supported for 3d
 

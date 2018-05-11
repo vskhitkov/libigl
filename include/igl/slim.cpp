@@ -53,8 +53,13 @@ namespace igl
     IGL_INLINE void buildA(igl::SLIMData& s, std::vector<Eigen::Triplet<double> > & IJV);
     IGL_INLINE void buildRhs(igl::SLIMData& s, const Eigen::SparseMatrix<double> &A);
     IGL_INLINE void add_soft_constraints(igl::SLIMData& s, Eigen::SparseMatrix<double> &L);
+    IGL_INLINE void add_additional_constraints(igl::SLIMData& s, Eigen::SparseMatrix<double> &L, Eigen::VectorXd& rhs);
     IGL_INLINE double compute_energy(igl::SLIMData& s, Eigen::MatrixXd &V_new);
     IGL_INLINE double compute_soft_const_energy(igl::SLIMData& s,
+                                                const Eigen::MatrixXd &V,
+                                                const Eigen::MatrixXi &F,
+                                                Eigen::MatrixXd &V_o);
+    IGL_INLINE double compute_additional_const_energy(igl::SLIMData& s,
                                                 const Eigen::MatrixXd &V,
                                                 const Eigen::MatrixXi &F,
                                                 Eigen::MatrixXd &V_o);
@@ -426,8 +431,8 @@ namespace igl
         Uc = cg.solveWithGuess(s.rhs, guess);
       }
 #else
-        CholmodSimplicialLDLT<Eigen::SparseMatrix<double> > solver;
-        Uc = solver.compute(L).solve(s.rhs);
+      CholmodSimplicialLDLT<Eigen::SparseMatrix<double> > solver;
+      Uc = solver.compute(L).solve(s.rhs);
 #endif
       for (int i = 0; i < s.dim; i++)
         uv.col(i) = Uc.block(i * s.v_n, 0, s.v_n, 1);
@@ -556,6 +561,7 @@ namespace igl
 
       Eigen::SparseMatrix<double> OldL = L;
       add_soft_constraints(s,L);
+      add_additional_constraints(s,L,s.rhs);
       L.makeCompressed();
     }
 
@@ -573,11 +579,18 @@ namespace igl
       }
     }
 
+    IGL_INLINE void add_additional_constraints(igl::SLIMData& s, Eigen::SparseMatrix<double> &L, Eigen::VectorXd& rhs)
+    {
+      L += s.C.transpose() * s.C;
+      rhs += s.C.transpose() * s.C_rhs;
+    }
+
     IGL_INLINE double compute_energy(igl::SLIMData& s, Eigen::MatrixXd &V_new)
     {
       compute_jacobians(s,V_new);
       return compute_energy_with_jacobians(s, s.V, s.F, s.Ji, V_new, s.M) +
-             compute_soft_const_energy(s, s.V, s.F, V_new);
+             compute_soft_const_energy(s, s.V, s.F, V_new) +
+             compute_additional_const_energy(s, s.V, s.F, V_new);
     }
 
     IGL_INLINE double compute_soft_const_energy(igl::SLIMData& s,
@@ -589,6 +602,21 @@ namespace igl
       for (int i = 0; i < s.b.rows(); i++)
       {
         e += s.soft_const_p * (s.bc.row(i) - V_o.row(s.b(i))).squaredNorm();
+      }
+      return e;
+    }
+
+    IGL_INLINE double compute_additional_const_energy(igl::SLIMData& s,
+                                                const Eigen::MatrixXd &V,
+                                                const Eigen::MatrixXi &F,
+                                                Eigen::MatrixXd &V_o)
+    {
+      auto uv = Eigen::Map<Eigen::VectorXd>(V_o.data(), V_o.rows()*V_o.cols());
+      double e = 0;
+      for (int i = 0; i < s.C.rows(); i++)
+      {
+        double r = s.C.row(i).dot(uv) - s.C_rhs(i);
+        e += r*r;
       }
       return e;
     }
