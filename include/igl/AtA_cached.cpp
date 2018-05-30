@@ -115,6 +115,7 @@ IGL_INLINE void igl::AtA_cached(
     const igl::AtA_cached_data& data,
     Eigen::SparseMatrix<Scalar>& AtA)
 {
+  #pragma omp parallel for
   for (unsigned i=0; i<data.I_outer.size()-1; ++i)
   {
     *(AtA.valuePtr() + i) = 0;
