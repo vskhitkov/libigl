@@ -954,11 +954,15 @@ IGL_INLINE void igl::slim_precompute(
   assert (F.cols() == 3 || F.cols() == 4);
 
   igl::slim::pre_calc(data);
-  data.energy = igl::slim::compute_energy(data,data.V_o) / data.mesh_area;
+  //data.energy = igl::slim::compute_energy(data,data.V_o) / data.mesh_area;
+  data.energy = -1;
 }
 
 IGL_INLINE Eigen::MatrixXd igl::slim_solve(SLIMData &data, int iter_num)
 {
+  if (data.energy < 0) 
+      data.energy = igl::slim::compute_energy(data,data.V_o) / data.mesh_area;
+  
   for (int i = 0; i < iter_num; i++)
   {
     Eigen::MatrixXd dest_res;
