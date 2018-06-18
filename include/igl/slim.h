@@ -83,6 +83,10 @@ struct SLIMData
   Eigen::SparseMatrix<double> AtA;
   igl::AtA_cached_data AtA_data;
   #endif
+
+  // some temporary data buffers
+  std::vector<Eigen::Triplet<double> > IJV;
+  Eigen::VectorXd f_rhs;
 };
 
 // Compute necessary information to start using SLIM
