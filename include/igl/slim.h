@@ -83,6 +83,9 @@ struct SLIMData
   Eigen::SparseMatrix<double> AtA;
   igl::AtA_cached_data AtA_data;
   #endif
+  
+  // Deformation visualization
+  Eigen::VectorXd elements_deformation;
 
   // some temporary data buffers
   std::vector<Eigen::Triplet<double> > IJV;

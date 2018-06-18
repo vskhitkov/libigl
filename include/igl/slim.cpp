@@ -641,40 +641,43 @@ namespace igl
           double s1 = sing(0);
           double s2 = sing(1);
 
+          double& e = s.elements_deformation(i);
           switch (s.slim_energy)
           {
             case igl::SLIMData::ARAP:
             {
-              energy += areas(i) * (pow(s1 - 1, 2) + pow(s2 - 1, 2));
+              e = (pow(s1 - 1, 2) + pow(s2 - 1, 2));
               break;
             }
             case igl::SLIMData::SYMMETRIC_DIRICHLET:
             {
-              energy += areas(i) * (pow(s1, 2) + pow(s1, -2) + pow(s2, 2) + pow(s2, -2));
+              e = (pow(s1, 2) + pow(s1, -2) + pow(s2, 2) + pow(s2, -2));
               break;
             }
             case igl::SLIMData::EXP_SYMMETRIC_DIRICHLET:
             {
-              energy += areas(i) * exp(s.exp_factor * (pow(s1, 2) + pow(s1, -2) + pow(s2, 2) + pow(s2, -2)));
+              e = exp(s.exp_factor * (pow(s1, 2) + pow(s1, -2) + pow(s2, 2) + pow(s2, -2)));
               break;
             }
             case igl::SLIMData::LOG_ARAP:
             {
-              energy += areas(i) * (pow(log(s1), 2) + pow(log(s2), 2));
+              e = (pow(log(s1), 2) + pow(log(s2), 2));
               break;
             }
             case igl::SLIMData::CONFORMAL:
             {
-              energy += areas(i) * ((pow(s1, 2) + pow(s2, 2)) / (2 * s1 * s2));
+              e = ((pow(s1, 2) + pow(s2, 2)) / (2 * s1 * s2));
               break;
             }
             case igl::SLIMData::EXP_CONFORMAL:
             {
-              energy += areas(i) * exp(s.exp_factor * ((pow(s1, 2) + pow(s2, 2)) / (2 * s1 * s2)));
+              e = exp(s.exp_factor * ((pow(s1, 2) + pow(s2, 2)) / (2 * s1 * s2)));
               break;
             }
 
           }
+          
+          energy += e * areas(i);
 
         }
       }
@@ -703,40 +706,43 @@ namespace igl
           double s2 = sing(1);
           double s3 = sing(2);
 
+          double& e = s.elements_deformation(i);
           switch (s.slim_energy)
           {
             case igl::SLIMData::ARAP:
             {
-              energy += areas(i) * (pow(s1 - 1, 2) + pow(s2 - 1, 2) + pow(s3 - 1, 2));
+              e = (pow(s1 - 1, 2) + pow(s2 - 1, 2) + pow(s3 - 1, 2));
               break;
             }
             case igl::SLIMData::SYMMETRIC_DIRICHLET:
             {
-              energy += areas(i) * (pow(s1, 2) + pow(s1, -2) + pow(s2, 2) + pow(s2, -2) + pow(s3, 2) + pow(s3, -2));
+              e = (pow(s1, 2) + pow(s1, -2) + pow(s2, 2) + pow(s2, -2) + pow(s3, 2) + pow(s3, -2));
               break;
             }
             case igl::SLIMData::EXP_SYMMETRIC_DIRICHLET:
             {
-              energy += areas(i) * exp(s.exp_factor *
+              e = exp(s.exp_factor *
                                        (pow(s1, 2) + pow(s1, -2) + pow(s2, 2) + pow(s2, -2) + pow(s3, 2) + pow(s3, -2)));
               break;
             }
             case igl::SLIMData::LOG_ARAP:
             {
-              energy += areas(i) * (pow(log(s1), 2) + pow(log(std::abs(s2)), 2) + pow(log(std::abs(s3)), 2));
+              e = (pow(log(s1), 2) + pow(log(std::abs(s2)), 2) + pow(log(std::abs(s3)), 2));
               break;
             }
             case igl::SLIMData::CONFORMAL:
             {
-              energy += areas(i) * ((pow(s1, 2) + pow(s2, 2) + pow(s3, 2)) / (3 * pow(s1 * s2 * s3, 2. / 3.)));
+              e = ((pow(s1, 2) + pow(s2, 2) + pow(s3, 2)) / (3 * pow(s1 * s2 * s3, 2. / 3.)));
               break;
             }
             case igl::SLIMData::EXP_CONFORMAL:
             {
-              energy += areas(i) * exp((pow(s1, 2) + pow(s2, 2) + pow(s3, 2)) / (3 * pow(s1 * s2 * s3, 2. / 3.)));
+              e = exp((pow(s1, 2) + pow(s2, 2) + pow(s3, 2)) / (3 * pow(s1 * s2 * s3, 2. / 3.)));
               break;
             }
           }
+          
+          energy += e * areas(i);
         }
       }
 
@@ -956,6 +962,9 @@ IGL_INLINE void igl::slim_precompute(
   igl::slim::pre_calc(data);
   //data.energy = igl::slim::compute_energy(data,data.V_o) / data.mesh_area;
   data.energy = -1;
+  
+  // for deformation visualization
+  data.elements_deformation.setZero(data.M.rows());
 }
 
 IGL_INLINE Eigen::MatrixXd igl::slim_solve(SLIMData &data, int iter_num)
