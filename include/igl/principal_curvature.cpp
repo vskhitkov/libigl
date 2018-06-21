@@ -165,7 +165,7 @@ public:
   normalType nt;
 
   double lastRadius;
-  double scaledRadius;
+  //double scaledRadius;
   std::string lastMeshName;
 
   /* Benchmark related variables */
@@ -663,7 +663,7 @@ IGL_INLINE void CurvatureCalculator::computeCurvature()
 
 
 
-  scaledRadius=getAverageEdge()*sphereRadius;
+  //scaledRadius=getAverageEdge()*sphereRadius;
 
   std::vector<int> vv;
   std::vector<int> vvtmp;
@@ -680,7 +680,7 @@ IGL_INLINE void CurvatureCalculator::computeCurvature()
     switch (st)
     {
       case SPHERE_SEARCH:
-        getSphere(i,scaledRadius,vv,6);
+        getSphere(i,sphereRadius,vv,6);
         break;
       case K_RING_SEARCH:
         getKRing(i,kRing,vv);
@@ -792,7 +792,7 @@ IGL_INLINE std::vector<size_t> igl::principal_curvature(
 {
   std::vector<size_t> bad_vertices;
 
-  if (radius < 2)
+  if (radius < 2 && useKring)
   {
     radius = 2;
     std::cout << "WARNING: igl::principal_curvature needs a radius >= 2, fixing it to 2." << std::endl;
