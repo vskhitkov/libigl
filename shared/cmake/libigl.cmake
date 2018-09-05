@@ -1,5 +1,23 @@
 cmake_minimum_required(VERSION 3.1)
 
+# https://github.com/libigl/libigl/issues/751
+# http://lists.llvm.org/pipermail/llvm-commits/Week-of-Mon-20160425/351643.html
+if(APPLE)
+  if(NOT CMAKE_LIBTOOL)
+    find_program(CMAKE_LIBTOOL NAMES libtool)
+  endif()
+  if(CMAKE_LIBTOOL)
+    set(CMAKE_LIBTOOL ${CMAKE_LIBTOOL} CACHE PATH "libtool executable")
+    message(STATUS "Found libtool - ${CMAKE_LIBTOOL}")
+    get_property(languages GLOBAL PROPERTY ENABLED_LANGUAGES)
+    foreach(lang ${languages})
+      # Added -c 
+      set(CMAKE_${lang}_CREATE_STATIC_LIBRARY
+        "${CMAKE_LIBTOOL} -c -static -o <TARGET> <LINK_FLAGS> <OBJECTS> ")
+    endforeach()
+  endif()
+endif()
+
 ### Find packages to populate default options ###
 #
 # COMPONENTS should match subsequent calls
@@ -94,28 +112,33 @@ target_link_libraries(igl_common INTERFACE ${CMAKE_THREAD_LIBS_INIT})
 
 function(compile_igl_module module_dir)
   string(REPLACE "/" "_" module_name "${module_dir}")
+  if(module_name STREQUAL "core")
+    set(module_libname "igl")
+  else()
+    set(module_libname "igl_${module_name}")
+  endif()
   if(LIBIGL_USE_STATIC_LIBRARY)
     file(GLOB SOURCES_IGL_${module_name}
       "${LIBIGL_SOURCE_DIR}/igl/${module_dir}/*.cpp"
       "${LIBIGL_SOURCE_DIR}/igl/copyleft/${module_dir}/*.cpp")
-    add_library(igl_${module_name} STATIC ${SOURCES_IGL_${module_name}} ${ARGN})
+    add_library(${module_libname} STATIC ${SOURCES_IGL_${module_name}} ${ARGN})
     if(MSVC)
-      target_compile_options(igl_${module_name} PRIVATE /w) # disable all warnings (not ideal but...)
+      target_compile_options(${module_libname} PRIVATE /w) # disable all warnings (not ideal but...)
     else()
-      #target_compile_options(igl_${module_name} PRIVATE -w) # disable all warnings (not ideal but...)
+      #target_compile_options(${module_libname} PRIVATE -w) # disable all warnings (not ideal but...)
     endif()
   else()
-    add_library(igl_${module_name} INTERFACE)
+    add_library(${module_libname} INTERFACE)
   endif()
 
-  target_link_libraries(igl_${module_name} ${IGL_SCOPE} igl_common)
+  target_link_libraries(${module_libname} ${IGL_SCOPE} igl_common)
   if(NOT module_name STREQUAL "core")
-    target_link_libraries(igl_${module_name} ${IGL_SCOPE} igl_core)
+    target_link_libraries(${module_libname} ${IGL_SCOPE} igl)
   endif()
 
   # Alias target because it looks nicer
-  message(STATUS "Creating target: igl::${module_name}")
-  add_library(igl::${module_name} ALIAS igl_${module_name})
+  message(STATUS "Creating target: igl::${module_name} (${module_libname})")
+  add_library(igl::${module_name} ALIAS ${module_libname})
 endfunction()
 
 ################################################################################
@@ -213,6 +236,7 @@ if(LIBIGL_WITH_CORK)
   compile_igl_module("cork")
   target_include_directories(igl_cork ${IGL_SCOPE} cork)
   target_include_directories(igl_cork ${IGL_SCOPE} "${CORK_DIR}/src")
+  target_link_libraries(igl_cork ${IGL_SCOPE} cork)
 endif()
 
 ################################################################################
@@ -378,7 +402,6 @@ if(LIBIGL_WITH_XML)
   set(TINYXML2_DIR "${LIBIGL_EXTERNAL}/tinyxml2")
   if(NOT TARGET tinyxml2)
     add_library(tinyxml2 STATIC ${TINYXML2_DIR}/tinyxml2.cpp ${TINYXML2_DIR}/tinyxml2.h)
-    target_include_directories(tinyxml2 PUBLIC ${TINYXML2_DIR})
     set_target_properties(tinyxml2 PROPERTIES
             COMPILE_DEFINITIONS "TINYXML2_EXPORT"
             VERSION "3.0.0"
@@ -386,4 +409,5 @@ if(LIBIGL_WITH_XML)
   endif()
   compile_igl_module("xml")
   target_link_libraries(igl_xml ${IGL_SCOPE} tinyxml2)
+  target_include_directories(igl_xml ${IGL_SCOPE} ${TINYXML2_DIR})
 endif()
