@@ -359,15 +359,6 @@ SolverState ComputeLIM(
   SolverState state = RUNNING;
   while(state == RUNNING)
   {
-    if(data->solver->CurrentStepSize < MIN_STEPSIZE && data->solver->CurrentPositionalEnergy > tolerance)
-      state = LOCAL_MINIMA; // converged to local minima
-
-    if(data->solver->CurrentPositionalEnergy <= tolerance && (findLocalMinima == false || data->solver->CurrentStepSize < MIN_STEPSIZE))
-      state = SUCCEEDED; // succeeded
-
-    if(data->iteration >= maxIteration)
-      state = ITERATION_LIMIT; // max iteration reached
-    
     if(state == RUNNING)
     {
       if(data->solver->Solve() == -1)
@@ -381,7 +372,16 @@ SolverState ComputeLIM(
 
         data->iteration++;
       }
-    }
+    }  
+      
+    if(data->solver->CurrentStepSize < MIN_STEPSIZE && data->solver->CurrentPositionalEnergy > tolerance)
+      state = LOCAL_MINIMA; // converged to local minima
+
+    if(data->solver->CurrentPositionalEnergy <= tolerance && (findLocalMinima == false || data->solver->CurrentStepSize < MIN_STEPSIZE))
+      state = SUCCEEDED; // succeeded
+
+    if(data->iteration >= maxIteration)
+      state = ITERATION_LIMIT; // max iteration reached
   }
 
   // assign resulting vertices
